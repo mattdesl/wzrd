@@ -36,7 +36,9 @@ module.exports.static = function(opts) {
   router.addRoute('/', function(req, res, params) {
     fs.exists(path.join(basedir, 'index.html'), function(exists) {
       var firstEntry = opts.entries[0].to
-      if (exists) return staticHandler(req, res)
+      if (opts.index) 
+        return fileIndex(opts.index, req, res)
+      else if (exists) return staticHandler(req, res)
       else module.exports.generateIndex(firstEntry, req, res)
     })
   })
@@ -77,4 +79,17 @@ module.exports.generateIndex = function(entry, req, res) {
   console.log(JSON.stringify({url: req.url, type: 'generated', time: new Date()}))
   res.setHeader('content-type', 'text/html')
   res.end('<!doctype html><head><meta charset="utf-8"></head><body><script src="' + entry + '"></script></body></html>')
+}
+
+function fileIndex(filename, req, res) {
+  console.log(req.url, '(static '+filename+')')
+  res.setHeader('content-type', 'text/html')
+  var readStream = fs.createReadStream(filename)
+
+  readStream.on('open', function () {
+    readStream.pipe(res)
+  })
+  readStream.on('error', function(err) {
+    res.end(err)
+  })
 }
